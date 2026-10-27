@@ -1,0 +1,41 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOSS outputs</title>
+<style>
+  body { margin: 0; padding: 16px; font: 14px system-ui, sans-serif; background: #111; color: #ddd; }
+  #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+  figure { margin: 0; }
+  img { width: 100%; display: block; border-radius: 6px; cursor: zoom-in; background: #222; }
+  figcaption { padding: 6px 2px; color: #999; }
+  #empty { color: #777; }
+</style>
+<p id="empty">No images yet. This page refreshes every 5 s.</p>
+<div id="grid"></div>
+<script>
+// Lists the PNGs in this folder from the http.server directory listing, newest first.
+async function refresh() {
+  const html = await (await fetch("./", { cache: "no-store" })).text();
+  // The listing's hrefs are already URL-encoded; file names only ever reach the page as text.
+  const hrefs = [...new DOMParser().parseFromString(html, "text/html").querySelectorAll("a")]
+    .map(a => a.getAttribute("href")).filter(h => /\.(png|jpe?g|webp)$/i.test(h));
+  const stamps = await Promise.all(hrefs.map(async h =>
+    Date.parse((await fetch(h, { method: "HEAD", cache: "no-store" })).headers.get("Last-Modified")) || 0));
+  const items = hrefs.map((h, i) => [h, stamps[i]]).sort((a, b) => b[1] - a[1]);
+  document.getElementById("empty").hidden = items.length > 0;
+  document.getElementById("grid").replaceChildren(...items.map(([h, t]) => {
+    const figure = document.createElement("figure"), link = document.createElement("a");
+    const img = document.createElement("img"), caption = document.createElement("figcaption");
+    link.href = h;
+    link.target = "_blank";
+    img.src = `${h}?t=${t}`;
+    img.loading = "lazy";
+    caption.textContent = `${decodeURIComponent(h)} · ${new Date(t).toLocaleTimeString()}`;
+    link.append(img);
+    figure.append(link, caption);
+    return figure;
+  }));
+}
+refresh();
+setInterval(refresh, 5000);
+</script>

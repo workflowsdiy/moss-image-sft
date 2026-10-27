@@ -1,0 +1,8 @@
+bin/
+models/
+logs/
+outputs/*
+!outputs/.gitkeep
+!outputs/gallery.html
+remote.env
+.claude/
