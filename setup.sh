@@ -10,7 +10,7 @@ SDCPP_DIR=${SDCPP_DIR:-$HOME/dev/stable-diffusion.cpp}
 SDCPP_REF=${SDCPP_REF:-b13a482}
 MOSS_QUANT=${MOSS_QUANT:-Q8_0}
 TE_QUANT=${TE_QUANT:-Q8_0}
-HF=(uvx --from 'huggingface_hub[hf_xet]' hf)
+HF=(uvx --from 'huggingface_hub[hf_xet]==2.3.0' hf)
 # Hugging Face commits the downloads are pinned to, so a file replaced upstream is never fetched silently.
 MOSS_REV=a013f7442e672e67b21f485b4b4f369df5500847 TE_REV=3885219b6810b007914f3a7950a8d1b469d598a5
 VAE_REV=8fb0d8c3a126cfd1406acaf96698dbfe9d99b680
@@ -21,8 +21,8 @@ if [ ! -x bin/sd-server ]; then
   git -C "$SDCPP_DIR" fetch --tags origin
   git -C "$SDCPP_DIR" checkout "$SDCPP_REF"
   git -C "$SDCPP_DIR" submodule update --init --recursive
-  uvx cmake -S "$SDCPP_DIR" -B "$SDCPP_DIR/build" -DSD_METAL=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release
-  uvx cmake --build "$SDCPP_DIR/build" --target sd-server sd-cli -j 6
+  uvx cmake==4.4.4 -S "$SDCPP_DIR" -B "$SDCPP_DIR/build" -DSD_METAL=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release
+  uvx cmake==4.4.4 --build "$SDCPP_DIR/build" --target sd-server sd-cli -j 6
   mkdir -p bin
   cp "$SDCPP_DIR/build/bin/sd-server" "$SDCPP_DIR/build/bin/sd-cli" bin/
   echo "$SDCPP_REF $(git -C "$SDCPP_DIR" rev-parse --short HEAD)" > bin/SDCPP_VERSION

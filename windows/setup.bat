@@ -10,7 +10,7 @@ if not defined SDCPP_REF set SDCPP_REF=b13a482
 if not defined MOSS_QUANT set MOSS_QUANT=Q8_0
 if not defined TE_QUANT set TE_QUANT=Q8_0
 if not defined CUDA_ARCH set CUDA_ARCH=native
-set HF=uvx --from huggingface_hub[hf_xet] hf
+set HF=uvx --from huggingface_hub[hf_xet]==2.3.0 hf
 rem Hugging Face commits the downloads are pinned to, so a file replaced upstream is never fetched silently.
 set MOSS_REV=a013f7442e672e67b21f485b4b4f369df5500847
 set TE_REV=3885219b6810b007914f3a7950a8d1b469d598a5
