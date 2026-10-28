@@ -18,13 +18,14 @@ Each image is the first try, seed 42, at the default settings below.
 |---|---|---|
 | Transformer | `models/MOSS-Image-SFT-Q8_0.gguf` ([unsloth](https://huggingface.co/unsloth/MOSS-Image-SFT-GGUF)) | 5.5 GB |
 | Text encoder | `models/Qwen3.5-9B-Q8_0.gguf` ([unsloth](https://huggingface.co/unsloth/Qwen3.5-9B-GGUF)) | 9.5 GB |
-| VAE (FLUX.2 small decoder) and MOSS tokenizer | `models/vae/`, `models/tokenizer/` | 0.26 GB |
+| VAE (FLUX.2 small decoder) and MOSS tokenizer | `models/vae/`, `models/tokenizer/` | 0.27 GB |
 
-All three load onto the GPU: about 14 GB of weights plus working memory.
+All three load onto the GPU: about 15.3 GB (14.2 GiB) of weights plus working memory.
 
 ## On a Mac (Apple Silicon)
 
-Needs git, [uv](https://docs.astral.sh/uv/), Xcode's command line tools and Python 3.
+Needs git, [uv](https://docs.astral.sh/uv/), Python 3 and full Xcode, not only the command line tools: the Metal
+build calls `xcrun metal` and `xcrun metallib` to compile sd.cpp's shaders, and those ship only with Xcode.
 
 ```bash
 ./setup.sh                 # once, online: clones ~/dev/stable-diffusion.cpp, builds bin/sd-server, downloads models/
@@ -44,7 +45,8 @@ bf16, where Q8_0 scores 0.05).
 
 ## On Windows with an NVIDIA GPU
 
-Needs git, uv, Python 3, Visual Studio 2022 with the C++ workload, and CUDA 12 with its Visual Studio integration.
+Needs git, uv, Python 3, Visual Studio 2022 with the C++ workload, CUDA 12 with its Visual Studio integration, and
+CMake and Ninja on `PATH` (`windows\setup.bat` runs `cmake -G Ninja`).
 Clone this repository to `%USERPROFILE%\dev\moss-image-sft`, then:
 
 ```bat
@@ -57,8 +59,9 @@ python gen.py --layout examples\comic.json --size 1536x1024
 
 `remote.sh` starts `windows\server.bat` over SSH for one batch, tunnels it to the Mac and stops it afterwards, so
 the GPU is only held while images are being made. If it cannot confirm the server stopped, it says so and keeps any
-lease. It refuses to start when port 11439 is already in use on that machine. Images land in the Mac's `outputs/`. The Windows machine needs
-OpenSSH Server and key login.
+lease. It refuses to start when port 11439 is already in use on that machine. `windows\stop.bat` stops every
+`sd-server.exe` running from that checkout, not only this batch's, so run one batch per checkout at a time.
+Images land in the Mac's `outputs/`. The Windows machine needs OpenSSH Server and key login.
 
 ```bash
 REMOTE_HOST=gpu-box ./remote.sh ./gen.py "a storefront sign that says \"OPEN 24/7\""
@@ -100,5 +103,9 @@ about 6.6 minutes for 1024×1024.
 
 The scripts here are MIT-licensed ([LICENSE](LICENSE)). MOSS-Image-SFT is by the OpenMOSS team and its Qwen3.5-9B
 text encoder by the Qwen team, both under Apache-2.0; stable-diffusion.cpp is by leejet and contributors under MIT,
-and the GGUF conversions are by unsloth. The weights are downloaded from Hugging Face, not redistributed here. The sample
-images were generated with this setup.
+and the GGUF conversions are by unsloth. The VAE is the FLUX.2 small decoder by Black Forest Labs
+([black-forest-labs/FLUX.2-small-decoder](https://huggingface.co/black-forest-labs/FLUX.2-small-decoder), Apache-2.0),
+and the VAE and MOSS tokenizer are taken from [unsloth/MOSS-Image-SFT-FP8](https://huggingface.co/unsloth/MOSS-Image-SFT-FP8)
+at revision `8fb0d8c`, which is Apache-2.0 and carries OpenMOSS's files unchanged. The OpenMOSS and unsloth cards release
+their files under Apache-2.0 and thank the Diffusers, Qwen and FLUX teams; neither repository ships a NOTICE file. The weights are
+downloaded from Hugging Face, not redistributed here. The sample images were generated with this setup.
