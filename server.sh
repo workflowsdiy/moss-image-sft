@@ -16,7 +16,9 @@ if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN -t > /dev/null 2>&1; then
 fi
 mkdir -p logs
 export HF_HUB_OFFLINE=1
-exec bin/sd-server --listen-ip 127.0.0.1 --listen-port "$PORT" \
+# pipefail: the script exits with sd-server's status, not tee's.
+set -o pipefail
+bin/sd-server --listen-ip 127.0.0.1 --listen-port "$PORT" \
   --diffusion-model "models/MOSS-Image-SFT-$MOSS_QUANT.gguf" \
   --llm "models/Qwen3.5-9B-$TE_QUANT.gguf" \
   --vae models/vae/diffusion_pytorch_model.safetensors \
