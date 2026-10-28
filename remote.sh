@@ -34,7 +34,7 @@ tunnel=
 cleanup() {
   [ -n "$tunnel" ] && kill "$tunnel" 2> /dev/null && wait "$tunnel" 2> /dev/null
   # Ending the SSH session normally stops the server; make sure before releasing the lease.
-  if ! "${SSH[@]}" "cmd /c \"cd /d $REMOTE_DIR && windows\\stop.bat\"" > /dev/null 2>&1; then
+  if ! "${SSH[@]}" "cmd /c \"cd /d \"$REMOTE_DIR\" && windows\\stop.bat\"" > /dev/null 2>&1; then
     echo "Could not confirm the server stopped on $REMOTE_HOST; check it there."
     [ -n "$leased" ] && echo "The GPU lease is kept until it has."
     return
@@ -44,12 +44,13 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 130' INT TERM
 
-"${SSH[@]}" -L "127.0.0.1:$PORT:127.0.0.1:11439" "cmd /c \"cd /d $REMOTE_DIR && windows\\server.bat\"" &
+"${SSH[@]}" -L "127.0.0.1:$PORT:127.0.0.1:11439" "cmd /c \"cd /d \"$REMOTE_DIR\" && windows\\server.bat\"" &
 tunnel=$!
-for _ in $(seq 1 120); do
-  curl -s -o /dev/null "http://127.0.0.1:$PORT/" && break
+# Each probe has a timeout, and the loop stops at 4 minutes, so a stalled tunnel cannot hold the lease.
+deadline=$((SECONDS + 240))
+until curl -s -o /dev/null --connect-timeout 3 --max-time 5 "http://127.0.0.1:$PORT/"; do
+  [ "$SECONDS" -lt "$deadline" ] || { echo "Server did not answer within 4 minutes."; exit 1; }
   kill -0 "$tunnel" 2> /dev/null || { echo "Server stopped early; see $REMOTE_DIR\\logs\\sd-server.log there."; exit 1; }
   sleep 2
 done
-curl -s -o /dev/null "http://127.0.0.1:$PORT/" || { echo "Server did not answer within 4 minutes."; exit 1; }
 "$@"
